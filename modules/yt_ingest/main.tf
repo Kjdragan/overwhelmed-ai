@@ -60,7 +60,7 @@ resource "google_cloud_scheduler_job" "yt_ingest_twice_daily" {
 }
 
 resource "google_service_account_iam_member" "ci_act_as_default_compute" {
-  service_account_id = "projects/${var.project_id}/serviceAccounts/${var.project_id}-compute@developer.gserviceaccount.com"
+  service_account_id = "projects/${data.google_project.current.number}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:overwhelmed-ci@${var.project_id}.iam.gserviceaccount.com"
 }

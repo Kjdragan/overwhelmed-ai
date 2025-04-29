@@ -2,12 +2,15 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 6.32"   # lock to the same major version you saw in the log
+      version = "~> 6.32"
     }
   }
 }
 
+# Fetch the current project metadata (including number)
+data "google_project" "current" {}
+
 provider "google" {
-  project = var.project_id      # ← this is the missing piece
-  region  = "us-central1"       # default for Cloud Functions v2 / Scheduler
+  project = var.project_id
+  region  = "us-central1"
 }
