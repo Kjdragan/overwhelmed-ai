@@ -1,0 +1,13 @@
+steps:
+  - id: "Terraform Init & Apply"
+    name: "hashicorp/terraform:1.7"
+    entrypoint: "/bin/sh"
+    args:
+      - "-c"
+      - |
+        cd infra
+        terraform init
+        terraform apply -auto-approve -input=false
+    env:
+      - "GOOGLE_APPLICATION_CREDENTIALS=/workspace/sa.json"
+timeout: "1200s"
