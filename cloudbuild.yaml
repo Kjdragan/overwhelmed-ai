@@ -1,3 +1,6 @@
+options:
+  logging: CLOUD_LOGGING_ONLY    # <── add this block (2 spaces indent)
+
 steps:
   - id: "Terraform Init & Apply"
     name: "hashicorp/terraform:1.7"
