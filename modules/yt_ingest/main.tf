@@ -1,9 +1,9 @@
 # modules/yt_ingest/main.tf
 resource "google_storage_bucket" "transcripts" {
-  name          = "yt-transcripts-${var.project_id}"
-  location      = "us-central1"
-  force_destroy = true
-  uniform_bucket_level_access = true
+  name                         = "yt-transcripts-${var.project_id}"
+  location                     = "us-central1"
+  force_destroy                = true
+  uniform_bucket_level_access  = true
 }
 
 data "archive_file" "src_zip" {
@@ -34,9 +34,9 @@ resource "google_cloudfunctions2_function" "yt_ingest" {
   }
 
   service_config {
-    max_instance_count   = 1
-    available_memory     = "256M"
-    timeout_seconds      = 60
+    max_instance_count    = 1
+    available_memory      = "256M"
+    timeout_seconds       = 60
     service_account_email = var.func_sa_email
     environment_variables = {
       TRANSCRIPT_BUCKET = google_storage_bucket.transcripts.name
@@ -60,7 +60,7 @@ resource "google_cloud_scheduler_job" "yt_ingest_twice_daily" {
 }
 
 resource "google_service_account_iam_member" "ci_act_as_default_compute" {
-  service_account_id = "projects/${data.google_project.current.number}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  service_account_id = "projects/${var.project_number}/serviceAccounts/${var.project_number}-compute@developer.gserviceaccount.com"
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:overwhelmed-ci@${var.project_id}.iam.gserviceaccount.com"
 }
