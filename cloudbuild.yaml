@@ -1,5 +1,5 @@
 options:
-  logging: CLOUD_LOGGING_ONLY    # <── add this block (2 spaces indent)
+  logging: CLOUD_LOGGING_ONLY   # <── new (2-space indent)
 
 steps:
   - id: "Terraform Init & Apply"
