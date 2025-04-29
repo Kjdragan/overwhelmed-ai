@@ -1,0 +1,2 @@
+yt-dlp==2024.4.9
+google-cloud-storage~=2.15

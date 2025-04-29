@@ -63,16 +63,16 @@ gsutil iam ch \
 5. **cloudbuild.yaml**
    ```yaml
    options:
-       logging: CLOUD_LOGGING_ONLY
+     logging: CLOUD_LOGGING_ONLY
    steps:
-       - id: Terraform Init & Apply
-         name: hashicorp/terraform:1.7
-         entrypoint: sh
-         args:
-             - -c
-             - |
-                   terraform init -input=false -reconfigure
-                   terraform apply -auto-approve -input=false
+     - id: Terraform Init & Apply
+       name: hashicorp/terraform:1.7
+       entrypoint: sh
+       args:
+         - -c
+         - |
+             terraform init -input=false -reconfigure
+             terraform apply -auto-approve -input=false
    timeout: "1200s"
    ```
 
@@ -135,5 +135,125 @@ gsutil iam ch \
 > populating our knowledge ingest pipeline — the CI/CD path is already in
 > place!_
 
+---
+
+## 7  Next up — deploying **yt_ingest** + Scheduler
+
+A minimal, production‑ready pattern you can copy‑paste into the repo.
+
+### 7.1  Repo layout (new files only)
+
 ```
+overwhelmed-ai/
+├─ functions/yt_ingest/            # Cloud Function source
+│  ├─ main.py                      # entry‑point
+│  └─ requirements.txt             # (google‑cloud‑storage, yt‑dlp, etc.)
+└─ modules/
+   └─ yt_ingest/
+      ├─ main.tf                   # TF resources
+      ├─ variables.tf
+      └─ outputs.tf
 ```
+
+### 7.2  Terraform module (modules/yt_ingest/main.tf)
+
+```hcl
+resource "google_storage_bucket" "transcripts" {
+  name          = "yt-ingest-cache-${var.project_id}"
+  location      = "us-central1"
+  force_destroy = true
+}
+
+resource "google_cloudfunctions2_function" "yt_ingest" {
+  name        = "yt_ingest"
+  location    = "us-central1"
+  build_config {
+    runtime     = "python312"
+    entry_point = "ingest"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.transcripts.name
+        object = google_storage_bucket_object.source_zip.name
+      }
+    }
+  }
+  service_config {
+    max_instance_count = 1
+    available_memory   = "256M"
+    service_account_email = var.func_sa_email
+  }
+}
+
+resource "google_cloud_scheduler_job" "yt_ingest_daily" {
+  name             = "yt-ingest-daily"
+  description      = "Download new transcripts twice per day"
+  schedule         = "0 9,21 * * *"   # 09:00 & 21:00 Chicago
+  time_zone        = "America/Chicago"
+  http_target {
+    http_method = "POST"
+    uri         = google_cloudfunctions2_function.yt_ingest.service_config[0].uri
+    oidc_token {
+      service_account_email = var.func_sa_email
+    }
+  }
+}
+```
+
+_Variables:_ `project_id`, `func_sa_email`
+
+### 7.3  Function code (functions/yt_ingest/main.py)
+
+```python
+import base64, json, os, tempfile, yt_dlp, google.cloud.storage as gcs
+
+def ingest(request):
+    """Cloud Function entry‑point – triggered by Scheduler (HTTP)."""
+    body = request.get_json(silent=True) or {}
+    url  = body.get("url", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+    tmp  = tempfile.mkdtemp()
+    ydl  = yt_dlp.YoutubeDL({"outtmpl": f"{tmp}/%(id)s.%(ext)s", "skip_download": True})
+    info = ydl.extract_info(url, download=False)
+    transcript = info.get("automatic_captions", {}).get("en", [{}])[0].get("url")
+    if not transcript:
+        return ("no transcript", 204)
+    # upload to GCS bucket
+    bucket = gcs.Client().bucket(os.environ["TRANSCRIPT_BUCKET"])
+    blob   = bucket.blob(f"{info["id"]}.json")
+    blob.upload_from_string(json.dumps(info), content_type="application/json")
+    return ("ok", 200)
+```
+
+_(Set `TRANSCRIPT_BUCKET` env‑var in `google_cloudfunctions2_function`.)_
+
+### 7.4  IAM roles for the function SA
+
+- `roles/storage.objectAdmin` on the transcript bucket
+- (optional) `roles/cloudscheduler.jobRunner` if using Pub/Sub trigger later
+
+### 7.5  Wire into the pipeline
+
+1. **Add module call** to root `main.tf`:
+   ```hcl
+   module "yt_ingest" {
+     source         = "./modules/yt_ingest"
+     project_id     = var.project_id
+     func_sa_email  = google_service_account.func_sa.email
+   }
+   ```
+2. **Commit & push** → Cloud Build applies Terraform → Function + Scheduler
+   deploy.
+3. **Validate** in console: Cloud Functions (2nd gen) list & Scheduler job list.
+
+### 7.6  Local quick‑test
+
+```bash
+curl -X POST "$(gcloud functions describe yt_ingest --gen2 --region us-central1 --format='value(serviceConfig.uri)')" \
+     -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+     -H "Content-Type: application/json" \
+     -d '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'
+```
+
+---
+
+_Clone, adjust names, push — the Terraform/Cloud Build stack you just built will
+deploy every resource above automatically._
