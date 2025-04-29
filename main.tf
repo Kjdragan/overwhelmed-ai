@@ -1,16 +1,22 @@
 terraform {
   backend "gcs" {
-    bucket = "overwhelmed-tf-state-457816"   # ← new bucket
+    bucket = "overwhelmed-tf-state-457816"
     prefix = "prod"
   }
 }
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Fetch the current project info (so we can pass the numeric project number
+# into our module for binding the Compute default service account)
+data "google_project" "current" {}
+
+# ──────────────────────────────────────────────────────────────────────────────
 resource "google_service_account" "yt_ingest_sa" {
   account_id   = "yt-ingest"
   display_name = "yt_ingest Cloud Function runtime"
 }
 
-# give runtime SA write access to transcript bucket
+# give the function SA write access to the transcript bucket
 resource "google_project_iam_member" "transcript_writer" {
   project = var.project_id
   role    = "roles/storage.objectAdmin"
@@ -18,7 +24,8 @@ resource "google_project_iam_member" "transcript_writer" {
 }
 
 module "yt_ingest" {
-  source        = "./modules/yt_ingest"
-  project_id    = var.project_id
-  func_sa_email = google_service_account.yt_ingest_sa.email
+  source         = "./modules/yt_ingest"
+  project_id     = var.project_id
+  project_number = data.google_project.current.number
+  func_sa_email  = google_service_account.yt_ingest_sa.email
 }
