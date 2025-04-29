@@ -8,6 +8,4 @@ steps:
         cd infra
         terraform init
         terraform apply -auto-approve -input=false
-    env:
-      - "GOOGLE_APPLICATION_CREDENTIALS=/workspace/sa.json"
 timeout: "1200s"
