@@ -7,8 +7,7 @@ terraform {
   }
 }
 
-# Fetch the current project metadata (including number)
-data "google_project" "current" {}
+# ──────────────────────────────────────────────────────────────────────────────
 
 provider "google" {
   project = var.project_id
