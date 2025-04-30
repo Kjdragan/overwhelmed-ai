@@ -1,3 +1,5 @@
+# /main.tf - Root Terraform file
+
 terraform {
   backend "gcs" {
     bucket = "overwhelmed2-tf-state-prod"

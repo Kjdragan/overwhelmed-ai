@@ -1,3 +1,5 @@
+# /cloudbuild.yaml - Cloud Build configuration
+
 options:
   logging: CLOUD_LOGGING_ONLY
 
@@ -8,7 +10,7 @@ steps:
     args:
       - -c
       - |
-        cd simple-tf
-        terraform init -input=false -reconfigure
-        terraform apply -auto-approve -input=false
+          # Using main directory Terraform files
+          terraform init -input=false -reconfigure
+          terraform apply -auto-approve -input=false
 timeout: "1200s"

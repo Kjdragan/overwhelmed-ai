@@ -1,3 +1,5 @@
+# /modules/yt_ingest/main.tf - YouTube Ingestion module
+
 # modules/yt_ingest/main.tf
 resource "google_storage_bucket" "transcripts" {
   name                         = "yt-transcripts-${var.project_id}"

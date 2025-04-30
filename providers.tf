@@ -1,3 +1,5 @@
+# /providers.tf - Provider configuration
+
 terraform {
   required_providers {
     google = {
