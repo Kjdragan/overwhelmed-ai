@@ -5,12 +5,11 @@ terraform {
   }
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Fetch the current project info (so we can pass the numeric project number
-# into our module for binding the Compute default service account)
-data "google_project" "current" {}
+# ------------------------------------------------------------------------------
+# Use the project number directly instead of fetching it dynamically
+# project_number = 321816670619
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 resource "google_service_account" "yt_ingest_sa" {
   account_id   = "yt-ingest"
   display_name = "yt_ingest Cloud Function runtime"
@@ -26,6 +25,6 @@ resource "google_project_iam_member" "transcript_writer" {
 module "yt_ingest" {
   source         = "./modules/yt_ingest"
   project_id     = var.project_id
-  project_number = data.google_project.current.number
+  project_number = 321816670619
   func_sa_email  = google_service_account.yt_ingest_sa.email
 }
