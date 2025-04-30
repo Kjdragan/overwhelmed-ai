@@ -10,7 +10,5 @@ steps:
       - -c
       - |
           terraform init -input=false -reconfigure
-          # Import the existing bucket into Terraform state
-          terraform import module.yt_ingest.google_storage_bucket.transcripts yt-transcripts-overwhelmed2 || true
           terraform apply -auto-approve -input=false
 timeout: "1200s"
