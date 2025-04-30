@@ -22,6 +22,10 @@ resource "google_project_iam_member" "transcript_writer" {
   project = var.project_id
   role    = "roles/storage.objectAdmin"
   member  = "serviceAccount:${google_service_account.yt_ingest_sa.email}"
+
+  lifecycle {
+    ignore_changes = [etag]
+  }
 }
 
 module "yt_ingest" {

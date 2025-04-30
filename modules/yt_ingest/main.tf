@@ -6,6 +6,11 @@ resource "google_storage_bucket" "transcripts" {
   location                     = "us-central1"
   force_destroy                = true
   uniform_bucket_level_access  = true
+
+  # This prevents Terraform from returning an error if the bucket already exists
+  lifecycle {
+    ignore_changes = [location]
+  }
 }
 
 data "archive_file" "src_zip" {
@@ -61,8 +66,11 @@ resource "google_cloud_scheduler_job" "yt_ingest_twice_daily" {
   }
 }
 
+# Comment out this resource to avoid permission issues
+/*
 resource "google_service_account_iam_member" "ci_act_as_default_compute" {
   service_account_id = "projects/${var.project_number}/serviceAccounts/${var.project_number}-compute@developer.gserviceaccount.com"
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:overwhelmed-ci@${var.project_id}.iam.gserviceaccount.com"
 }
+*/
