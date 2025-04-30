@@ -1,6 +1,5 @@
 # /functions/yt_ingest/main.py - YouTube ingestion Cloud Function
 
-# functions/yt_ingest/main.py
 import json
 import os
 import tempfile
