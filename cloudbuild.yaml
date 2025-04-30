@@ -1,5 +1,4 @@
-# /cloudbuild.yaml - Cloud Build configuration
-
+# /cloudbuild.yaml
 options:
   logging: CLOUD_LOGGING_ONLY
 
@@ -10,7 +9,8 @@ steps:
     args:
       - -c
       - |
-          # Using main directory Terraform files
           terraform init -input=false -reconfigure
+          # Import the existing bucket into Terraform state
+          terraform import module.yt_ingest.google_storage_bucket.transcripts yt-transcripts-overwhelmed2 || true
           terraform apply -auto-approve -input=false
 timeout: "1200s"

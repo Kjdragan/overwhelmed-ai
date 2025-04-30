@@ -1,16 +1,8 @@
 # /modules/yt_ingest/main.tf - YouTube Ingestion module
 
-# modules/yt_ingest/main.tf
-resource "google_storage_bucket" "transcripts" {
-  name                         = "yt-transcripts-${var.project_id}"
-  location                     = "us-central1"
-  force_destroy                = true
-  uniform_bucket_level_access  = true
-
-  # This prevents Terraform from returning an error if the bucket already exists
-  lifecycle {
-    ignore_changes = [location]
-  }
+# Use a data source to reference the existing bucket instead of creating it
+data "google_storage_bucket" "transcripts" {
+  name = "yt-transcripts-${var.project_id}"
 }
 
 data "archive_file" "src_zip" {
@@ -21,7 +13,7 @@ data "archive_file" "src_zip" {
 
 resource "google_storage_bucket_object" "src_upload" {
   name   = "yt_ingest_src_${data.archive_file.src_zip.output_md5}.zip"
-  bucket = google_storage_bucket.transcripts.name
+  bucket = data.google_storage_bucket.transcripts.name
   source = data.archive_file.src_zip.output_path
 }
 
@@ -34,7 +26,7 @@ resource "google_cloudfunctions2_function" "yt_ingest" {
     entry_point = "ingest"
     source {
       storage_source {
-        bucket = google_storage_bucket.transcripts.name
+        bucket = data.google_storage_bucket.transcripts.name
         object = google_storage_bucket_object.src_upload.name
       }
     }
@@ -46,7 +38,7 @@ resource "google_cloudfunctions2_function" "yt_ingest" {
     timeout_seconds       = 60
     service_account_email = var.func_sa_email
     environment_variables = {
-      TRANSCRIPT_BUCKET = google_storage_bucket.transcripts.name
+      TRANSCRIPT_BUCKET = data.google_storage_bucket.transcripts.name
     }
   }
 }
