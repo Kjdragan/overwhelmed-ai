@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "overwhelmed-tf-state-457816"
+    bucket = "overwhelmed2-tf-state-prod"
     prefix = "prod"
   }
 }
